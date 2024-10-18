@@ -69,6 +69,15 @@ Variables Glossary
 |                          | space-separated, its replacement. E.g.:          |
 |                          | "http://.*\.someurl\.io/ http://localmirror.net/"|
 +--------------------------+--------------------------------------------------+
+| ``KAS_EXTERNAL_PLUGINS`` | Specifies a path (absolute or relative) which    |
+| (K)                      | should be scanned for additional plugins.        |
+|                          | The directory should also contain the __init__.py|
+|                          | script which registers these plugins with KAS.   |
+|                          | This __init__.py file should be copied from the  |
+|                          | tests/external_plugins directory as this version |
+|                          | of the file also does version checking to try to |
+|                          | avoid problems with kas internal API changes.    |
++--------------------------+--------------------------------------------------+
 | ``DISTRO_APT_PREMIRRORS``| Specifies alternatives for apt URLs. Just like   |
 | (C)                      | ``KAS_PREMIRRORS``.                              |
 +--------------------------+--------------------------------------------------+

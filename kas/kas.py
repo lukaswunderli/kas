@@ -34,6 +34,8 @@ import logging
 import signal
 import sys
 import os
+import importlib
+import itertools
 from .kasusererror import KasUserError, CommandExecError
 
 try:
@@ -49,6 +51,7 @@ __license__ = 'MIT'
 __copyright__ = 'Copyright (c) Siemens AG, 2017-2018'
 
 default_log_level = 'info'
+external_plugins = None
 
 
 def create_logger():
@@ -109,15 +112,33 @@ def _atexit_handler():
         loop.close()
 
 
+def load_external_plugins():
+    """
+        Loads external plugins from env.KAS_EXTERNAL_PLUGINS path if set
+    """
+    global external_plugins
+
+    external_plugins_dir = os.environ.get('KAS_EXTERNAL_PLUGINS')
+    if external_plugins_dir:
+        ep = os.path.realpath(external_plugins_dir)
+        if ep and os.path.exists(ep):
+            sys.path.append(os.path.dirname(external_plugins_dir))
+            external_plugins = importlib.import_module(os.path.basename
+                    (external_plugins_dir))
+
+
 def kas_get_argparser():
     """
         Creates an argparser for kas with all plugins.
     """
+    load_external_plugins()
 
     # Load plugins here so that the commands and arguments introduced by the
     # plugins can be seen by sphinx when it calls this function to build the
     # documentation
     plugins.load()
+    if external_plugins:
+        external_plugins.load(__version__)
 
     parser = argparse.ArgumentParser(description='kas - setup tool for '
                                      'bitbake based project')
@@ -140,7 +161,8 @@ def kas_get_argparser():
 
     subparser = parser.add_subparsers(help='sub command help', dest='cmd')
 
-    for plugin in plugins.all():
+    for plugin in itertools.chain(plugins.all(), external_plugins.all()
+            if external_plugins else []):
         plugin_parser = subparser.add_parser(
             plugin.name,
             help=plugin.helpmsg,
@@ -188,7 +210,12 @@ def kas(argv):
         loop.add_signal_handler(sig, interruption)
     atexit.register(_atexit_handler)
 
-    plugin_class = plugins.get(args.cmd)
+    plugin_class = None
+    if external_plugins:
+        plugin_class = external_plugins.get(args.cmd)
+    if not plugin_class:
+        plugin_class = plugins.get(args.cmd)
+
     if plugin_class:
         plugin = plugin_class()
         plugin.run(args)
