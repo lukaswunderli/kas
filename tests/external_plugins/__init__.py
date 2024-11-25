@@ -25,6 +25,7 @@
 
 import importlib
 import os
+import logging
 import semantic_version as sv
 
 PLUGINS = {}
@@ -41,8 +42,7 @@ def register_plugins(mod, kasver):
                 sv.Version.coerce(kasver) <= sv.Version.coerce(max):
             PLUGINS[plugin.name] = plugin
         else:
-            print(f'Ignoring plugin {plugin.name} - version mismatch')
-
+            logging.warning(f'Ignoring plugin {plugin.name} - version mismatch. kas={kasver}, min={min}, max={max}')
 
 
 def load(kasver):
